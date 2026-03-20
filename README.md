@@ -1,97 +1,84 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# PushNotification — Firebase Cloud Messaging (React Native)
 
-# Getting Started
+A React Native app demonstrating Firebase Push Notifications (FCM) on Android, covering setup, permissions, and notification handling across all app states.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Versions
 
-## Step 1: Start Metro
+| Package | Version |
+|---|---|
+| `react-native` | `0.84.1` |
+| `react` | `19.2.3` |
+| `@react-native-firebase/app` | `^23.8.8` |
+| `@react-native-firebase/messaging` | `^23.8.8` |
+| Node | `>= 22.11.0` |
+| Yarn | `3.6.4` |
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+> Both `@react-native-firebase/*` packages must share the same major version to avoid build failures.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Setup
 
-```sh
-# Using npm
-npm start
+### 1. Install Dependencies
 
-# OR using Yarn
-yarn start
+```bash
+yarn install
 ```
 
-## Step 2: Build and run your app
+### 2. Firebase Console
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+- Create a project at [Firebase Console](https://console.firebase.google.com/)
+- Add an Android app — the **package name** must match `applicationId` in `android/app/build.gradle` (e.g., `com.pushnotification`)
+- Download `google-services.json` → place in `android/app/`
 
-### Android
+### 3. Android Native Config (already applied)
 
-```sh
-# Using npm
-npm run android
+- **`android/build.gradle`** — `classpath("com.google.gms:google-services:4.4.2")`
+- **`android/app/build.gradle`** — `apply plugin: "com.google.gms.google-services"`
+- **`AndroidManifest.xml`** — `POST_NOTIFICATIONS` permission (required for Android 13+ / API 33+)
 
-# OR using Yarn
+## Running the App
+
+```bash
+# Start Metro bundler
+yarn start
+
+# Run on Android (separate terminal)
 yarn android
 ```
 
-### iOS
+> Ensure the [React Native environment](https://reactnative.dev/docs/set-up-your-environment) is set up before running.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## How It Works
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### Permissions
 
-```sh
-bundle install
-```
+Two permission layers are required on Android 13+:
+- `PermissionsAndroid.request(POST_NOTIFICATIONS)` — native Android dialog
+- `messaging().requestPermission()` — Firebase internal authorization
 
-Then, and every time you update your native dependencies, run:
+### FCM Token
 
-```sh
-bundle exec pod install
-```
+`messaging().getToken()` returns the device token. Send this to your backend for targeted push delivery.
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### Notification Handling by App State
 
-```sh
-# Using npm
-npm run ios
+| State | Handler | Behavior |
+|---|---|---|
+| **Foreground** | `messaging().onMessage()` | Payload delivered to JS — no system notification shown. Display manually via `Alert`, toast, etc. |
+| **Background** | `messaging().setBackgroundMessageHandler()` | System shows notification automatically. Register handler in `index.js` before `AppRegistry.registerComponent()`. |
+| **Killed** | `messaging().getInitialNotification()` | Called when user taps a notification to open a terminated app. Useful for deep linking. |
 
-# OR using Yarn
-yarn ios
-```
+## Common Issues
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+| Issue | Fix |
+|---|---|
+| No notifications received | Verify `google-services.json` placement and `package_name`. Check plugin is applied. |
+| Foreground not showing | Expected — `onMessage()` gives payload only. Display manually. |
+| Permission dialog missing (API 33+) | Need both `AndroidManifest.xml` declaration AND runtime `PermissionsAndroid.request()`. |
+| Token is null | Firebase didn't initialize. Check `@react-native-firebase/app` and plugin setup. |
+| Build failures | SDK version mismatch. Use `compileSdkVersion` 33+. Clean with `cd android && ./gradlew clean`. |
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## References
 
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [React Native Firebase — Messaging](https://rnfirebase.io/messaging/usage)
+- [Firebase Console](https://console.firebase.google.com/)
+- [React Native Docs](https://reactnative.dev/docs/getting-started)
